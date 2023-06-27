@@ -73,6 +73,7 @@ impl AsRawFd for FileDesc {
 }
 
 /// Creates a file descriptor pointing to the standard input or `/dev/tty`.
+#[cfg(not(target_os = "redox"))]
 pub fn tty_fd() -> Result<FileDesc> {
     let (fd, close_on_drop) = if unsafe { libc::isatty(libc::STDIN_FILENO) == 1 } {
         (libc::STDIN_FILENO, false)
@@ -88,4 +89,12 @@ pub fn tty_fd() -> Result<FileDesc> {
     };
 
     Ok(FileDesc::new(fd, close_on_drop))
+}
+
+#[cfg(target_os = "redox")]
+pub fn tty_fd() -> Result<FileDesc> {
+    let tty = std::env::var("TTY").map_err(|x| io::Error::new(io::ErrorKind::NotFound, x))?;
+    let fd = fs::OpenOptions::new().read(true).write(true).open(&tty)?.into_raw_fd();
+
+    Ok(FileDesc::new(fd, true))
 }

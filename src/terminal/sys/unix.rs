@@ -123,10 +123,22 @@ fn read_supports_keyboard_enhancement_raw() -> Result<bool> {
     // ESC [ c          Query primary device attributes.
     const QUERY: &[u8] = b"\x1B[?u\x1B[c";
 
+    #[cfg(not(target_os = "redox"))]
     let result = File::open("/dev/tty").and_then(|mut file| {
         file.write_all(QUERY)?;
         file.flush()
     });
+    
+    #[cfg(target_os = "redox")]
+    let result = 
+        std::env::var("TTY")
+        .map_err(|x| io::Error::new(io::ErrorKind::NotFound, x))
+        .and_then(|tty| File::open(tty)
+                .and_then(|mut file| {
+                    file.write_all(QUERY)?;
+                    file.flush()
+            }));
+
     if result.is_err() {
         let mut stdout = io::stdout();
         stdout.write_all(QUERY)?;

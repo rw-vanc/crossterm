@@ -100,6 +100,10 @@ pub(crate) fn parse_event(buffer: &[u8], input_available: bool) -> Result<Option
         b'\n' if !crate::terminal::sys::is_raw_mode_enabled() => Ok(Some(InternalEvent::Event(
             Event::Key(KeyCode::Enter.into()),
         ))),
+        #[cfg(target_os = "redox")]
+        b'\n' => Ok(Some(InternalEvent::Event(
+            Event::Key(KeyCode::Enter.into()),
+        ))),
         b'\t' => Ok(Some(InternalEvent::Event(Event::Key(KeyCode::Tab.into())))),
         b'\x7F' => Ok(Some(InternalEvent::Event(Event::Key(
             KeyCode::Backspace.into(),
