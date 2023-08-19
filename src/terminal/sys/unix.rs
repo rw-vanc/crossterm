@@ -35,7 +35,10 @@ pub(crate) fn size() -> Result<(u16, u16)> {
         ws_ypixel: 0,
     };
 
+    #[cfg(not(target_os = "redox"))]
     let file = File::open("/dev/tty").map(|file| (FileDesc::new(file.into_raw_fd(), true)));
+    #[cfg(target_os = "redox")]
+    let file = tty_fd();
     let fd = if let Ok(file) = &file {
         file.raw_fd()
     } else {
